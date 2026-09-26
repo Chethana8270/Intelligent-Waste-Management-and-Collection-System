@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>
+Intelligent Waste Management
+</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+
+    margin: 0;
+
+    font-family:
+        Arial,
+        sans-serif;
+
+    background:
+        #eef5ef;
+
+    color: #222;
+}
+
+
+header {
+
+    background:
+        #137a3a;
+
+    color: white;
+
+    padding: 25px;
+
+}
+
+
+header h1 {
+
+    margin: 0;
+
+    font-size: 28px;
+
+}
+
+
+header p {
+
+    margin-bottom: 0;
+
+}
+
+
+.container {
+
+    max-width: 1200px;
+
+    margin: auto;
+
+    padding: 25px;
+
+}
+
+
+.summary {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(180px, 1fr)
+        );
+
+    gap: 15px;
+
+}
+
+
+.summary-card {
+
+    background: white;
+
+    padding: 20px;
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 3px 10px
+        rgba(0,0,0,0.1);
+
+}
+
+
+.summary-card h2 {
+
+    margin: 0;
+
+    font-size: 30px;
+
+    color:
+        #137a3a;
+
+}
+
+
+.bins {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(300px, 1fr)
+        );
+
+    gap: 20px;
+
+    margin-top: 25px;
+
+}
+
+
+.bin {
+
+    background: white;
+
+    padding: 22px;
+
+    border-radius: 15px;
+
+    box-shadow:
+        0 3px 10px
+        rgba(0,0,0,0.12);
+
+}
+
+
+.bin-header {
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+}
+
+
+.bin-header h2 {
+
+    margin: 0;
+
+}
+
+
+.status {
+
+    padding:
+        7px 12px;
+
+    border-radius:
+        20px;
+
+    color: white;
+
+    font-size:
+        12px;
+
+    font-weight:
+        bold;
+
+}
+
+
+.NORMAL {
+    background: #2e7d32;
+}
+
+
+.HALF {
+    background: #ef9b00;
+}
+
+
+.FULL {
+    background: #e65100;
+}
+
+
+.CRITICAL {
+    background: #d32f2f;
+}
+
+
+.progress {
+
+    width: 100%;
+
+    height: 28px;
+
+    background: #ddd;
+
+    border-radius: 20px;
+
+    overflow: hidden;
+
+    margin:
+        15px 0;
+
+}
+
+
+.progress-bar {
+
+    height: 100%;
+
+    transition:
+        width 0.5s;
+
+}
+
+
+.green {
+    background: #2e7d32;
+}
+
+
+.yellow {
+    background: #ef9b00;
+}
+
+
+.red {
+    background: #d32f2f;
+}
+
+
+.info {
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    padding:
+        8px 0;
+
+    border-bottom:
+        1px solid #eee;
+
+}
+
+
+.empty {
+
+    background: white;
+
+    padding: 50px;
+
+    text-align: center;
+
+    border-radius: 15px;
+
+    color: #777;
+
+}
+
+
+.error {
+
+    color: #d32f2f;
+
+    text-align: center;
+
+    margin: 20px;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+<h1>
+♻️ Intelligent Waste Management System
+</h1>
+
+<p>
+IoT-Based Smart Waste Collection
+</p>
+
+</header>
+
+
+<div class="container">
+
+
+<!-- SUMMARY -->
+
+<div class="summary">
+
+
+<div class="summary-card">
+
+<h2 id="total">
+0
+</h2>
+
+<p>
+Total Bins
+</p>
+
+</div>
+
+
+<div class="summary-card">
+
+<h2 id="normal">
+0
+</h2>
+
+<p>
+Normal
+</p>
+
+</div>
+
+
+<div class="summary-card">
+
+<h2 id="full">
+0
+</h2>
+
+<p>
+Full
+</p>
+
+</div>
+
+
+<div class="summary-card">
+
+<h2 id="critical">
+0
+</h2>
+
+<p>
+Critical
+</p>
+
+</div>
+
+
+</div>
+
+
+<!-- BIN LIST -->
+
+<div
+class="bins"
+id="bins">
+
+<div class="empty">
+
+Waiting for
+smart-bin data...
+
+</div>
+
+</div>
+
+
+</div>
+
+
+<script>
+
+
+async function loadBins() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/bins"
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Server error"
+            );
+
+        }
+
+
+        const bins =
+            await response.json();
+
+
+        updateSummary(
+            bins
+        );
+
+
+        displayBins(
+            bins
+        );
+
+
+    }
+
+    catch (error) {
+
+        console.error(
+            error
+        );
+
+    }
+
+}
+
+
+function updateSummary(
+    bins
+) {
+
+    let normal = 0;
+
+    let full = 0;
+
+    let critical = 0;
+
+
+    bins.forEach(
+        bin => {
+
+            if (
+                bin.status ===
+                "NORMAL"
+            ) {
+
+                normal++;
+
+            }
+
+
+            if (
+                bin.status ===
+                "FULL"
+            ) {
+
+                full++;
+
+            }
+
+
+            if (
+                bin.status ===
+                "CRITICAL"
+            ) {
+
+                critical++;
+
+            }
+
+        }
+    );
+
+
+    document.getElementById(
+        "total"
+    ).textContent =
+        bins.length;
+
+
+    document.getElementById(
+        "normal"
+    ).textContent =
+        normal;
+
+
+    document.getElementById(
+        "full"
+    ).textContent =
+        full;
+
+
+    document.getElementById(
+        "critical"
+    ).textContent =
+        critical;
+
+}
+
+
+function displayBins(
+    bins
+) {
+
+    const container =
+        document.getElementById(
+            "bins"
+        );
+
+
+    container.innerHTML = "";
+
+
+    if (
+        bins.length === 0
+    ) {
+
+        container.innerHTML = `
+
+            <div class="empty">
+
+                No smart bins
+                connected yet.
+
+                <br><br>
+
+                Turn on the ESP32
+                to start sending data.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    bins.forEach(
+        bin => {
+
+
+        let color =
+            "green";
+
+
+        if (
+            bin.fill_level >=
+            80
+        ) {
+
+            color =
+                "red";
+
+        }
+
+        else if (
+            bin.fill_level >=
+            50
+        ) {
+
+            color =
+                "yellow";
+
+        }
+
+
+        container.innerHTML += `
+
+            <div class="bin">
+
+
+                <div
+                    class="bin-header">
+
+                    <h2>
+                        ${bin.bin_id}
+                    </h2>
+
+
+                    <span
+                        class="
+                            status
+                            ${bin.status}
+                        ">
+
+                        ${bin.status}
+
+                    </span>
+
+                </div>
+
+
+                <p>
+
+                    Fill Level:
+
+                    <strong>
+
+                        ${Number(
+                            bin.fill_level
+                        ).toFixed(1)}%
+
+                    </strong>
+
+                </p>
+
+
+                <div
+                    class="progress">
+
+                    <div
+                        class="
+                            progress-bar
+                            ${color}
+                        "
+
+                        style="
+                            width:
+                            ${bin.fill_level}%
+                        "
+                    >
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="info">
+
+                    <span>
+                        Sensor Distance
+                    </span>
+
+                    <strong>
+
+                        ${Number(
+                            bin.distance
+                        ).toFixed(1)}
+
+                        cm
+
+                    </strong>
+
+                </div>
+
+
+                <div
+                    class="info">
+
+                    <span>
+                        Collection Priority
+                    </span>
+
+                    <strong>
+
+                        ${
+                            bin.status ===
+                            "CRITICAL"
+
+                            ? "HIGH"
+
+                            :
+
+                            bin.status ===
+                            "FULL"
+
+                            ? "HIGH"
+
+                            :
+
+                            bin.status ===
+                            "HALF"
+
+                            ? "MEDIUM"
+
+                            : "LOW"
+                        }
+
+                    </strong>
+
+                </div>
+
+
+                <div
+                    class="info">
+
+                    <span>
+                        Last Update
+                    </span>
+
+                    <strong>
+
+                        ${bin.updated_at}
+
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+        `;
+
+    });
+
+}
+
+
+// First update
+loadBins();
+
+
+// Update every 3 seconds
+setInterval(
+    loadBins,
+    3000
+);
+
+</script>
+
+
+</body>
+
+</html>
